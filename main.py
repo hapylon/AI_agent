@@ -36,17 +36,24 @@ def main():
 
     client = genai.Client(api_key=api_key)
     messages = [types.Content(role="user", parts=[types.Part(text=args.user_prompt)])]
-    generate_content(client, messages, verbose=args.verbose)
-    counter = 0
-    finished = False
-    while counter < 20:
-        counter +=1
-        try:
-            generate_content(client, messages, verbose=args.verbose)
-            if 
-        except e as Error:
-            print(f'Error in generate_content loop: {e}')
 
+    counter = 0
+    while counter < 20:
+        if (response_text_empty == True) & (function_call_made == False):
+            print(f"FINAL RESPONSE: {messages}")
+            break
+
+        else:
+            try:
+                generate_content(client, messages, verbose=args.verbose)
+
+            except Exception as e:
+                print(f'Error in generate_content loop: {e}');
+                break;
+        counter +=1
+        
+response_text_empty = None
+function_call_made = None
 
 def generate_content(client, messages, verbose: bool = False):    
     response = client.models.generate_content(
@@ -75,6 +82,11 @@ def generate_content(client, messages, verbose: bool = False):
     if not response.function_calls:
         print("Response:")
         print(response.text)
+        global response_text_empty
+        if not response.text:    
+            response_text_empty = True
+        else:
+            response_text_empty = False
         return
         # for function_call_part in response.function_calls:
         #     print(f"Calling function: {function_call_part.name}({function_call_part.args})")
@@ -82,7 +94,8 @@ def generate_content(client, messages, verbose: bool = False):
         print(f"Calling function: {function_call_part.name}({function_call_part.args})")
         function_call_result = call_function(function_call_part, verbose=verbose)
         parts = function_call_result.parts
-
+        global function_call_made
+        function_call_made = True
         if not parts or not parts[0].function_response or not parts[0].function_response.response:
             raise Exception("fatal exception of some sort")
         else:
@@ -95,8 +108,9 @@ def generate_content(client, messages, verbose: bool = False):
         role = "user",
         parts = list_for_later
     )
+    
     messages.append(user_message_with_results)
-
+    
     
 if __name__ == "__main__":
     main()
